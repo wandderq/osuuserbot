@@ -63,7 +63,7 @@ def format_user_info(user: User) -> str:
         ]
     ) + '\n'
 
-    user_info += f"Playime: **{playtime_h}h** | "
+    user_info += f"Playtime: **{playtime_h}h** | "
     user_info += f"Playcount: **{playcount}**"
 
     return user_info
