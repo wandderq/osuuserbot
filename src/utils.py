@@ -32,7 +32,7 @@ def format_user_info(user: User) -> str:
     uname = user.username
     uid = user.id
     online = user.is_online
-    mode = user.playmode
+    mode = user.playmode if not user.mode == 'osu' else 'standard'
 
     rank_global = user.statistics.global_rank
     rank_local = user.statistics.country_rank
@@ -51,9 +51,9 @@ def format_user_info(user: User) -> str:
     status = "🟢 Online" if online else "🔴 Offline"
     flag_emoji = get_flag_emoji(user.country_code)
 
-    user_info =  f"[**{uname}**]({user_link}) - {status}\n"
+    user_info =  f"**[{uname}]({user_link})** - **{status}**\n"
     user_info += f"osu!**{mode}** - **#{rank_global}**"
-    user_info += f" (**{flag_emoji} #{rank_local}\n\n**)"
+    user_info += f" (**{flag_emoji} #{rank_local}**)\n\n"
 
     user_info += create_text_table(
         (3, 2),
