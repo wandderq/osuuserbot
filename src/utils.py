@@ -53,7 +53,7 @@ def format_user_info(user: User) -> str:
 
     user_info =  f"[**{uname}**]({user_link}) - {status}\n"
     user_info += f"osu!**{mode}** - **#{rank_global}**"
-    user_info += f"; **{flag_emoji} #{rank_local}\n\n**"
+    user_info += f" (**{flag_emoji} #{rank_local}\n\n**)"
 
     user_info += create_text_table(
         (3, 2),
@@ -63,7 +63,7 @@ def format_user_info(user: User) -> str:
         ]
     ) + '\n'
 
-    user_info += f"Time: **{playtime_h}h**\n"
+    user_info += f"Playime: **{playtime_h}h** | "
     user_info += f"Playcount: **{playcount}**"
 
     return user_info
@@ -119,7 +119,8 @@ async def respond_user_info(event, user: User):
     response = event.builder.article(
         title=user.username,
         description=f"**{user.country.name.capitalize()}**, **{user.statistics.pp}**pp",
-        text=user_info
+        text=user_info,
+        parse_mode='md'
     )
 
     await event.answer([response], cache_time=60)
