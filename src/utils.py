@@ -29,7 +29,7 @@ def get_flag_emoji(country_code: str) -> str:
 
 
 def format_user_info(user: User) -> str:
-    uname = user.name
+    uname = user.username
     uid = user.id
     online = user.is_online
     mode = user.playmode
