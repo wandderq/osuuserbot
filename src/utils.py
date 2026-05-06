@@ -32,7 +32,7 @@ def format_user_info(user: User) -> str:
     uname = user.username
     uid = user.id
     online = user.is_online
-    mode = user.playmode if not user.mode == 'osu' else 'standard'
+    mode = user.playmode if not user.playmode == 'osu' else 'standard'
 
     rank_global = user.statistics.global_rank
     rank_local = user.statistics.country_rank
@@ -118,7 +118,7 @@ async def respond_user_info(event, user: User):
 
     response = event.builder.article(
         title=user.username,
-        description=f"**{user.country.name.capitalize()}**, **{user.statistics.pp}**pp",
+        description=f"{user.country.name.capitalize()}, {user.statistics.pp}pp",
         text=user_info,
         parse_mode='md'
     )
