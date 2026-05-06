@@ -1,6 +1,6 @@
 import asyncio
-
 import sys
+
 from telethon import TelegramClient, events
 
 import config
@@ -10,7 +10,6 @@ from osu_service import osu_service
 
 client = TelegramClient('osuuserbot.session', config.telegram.api_id, config.telegram.api_hash)
 logger = setup_logger('osuuserbot')
-
 
 
 @client.on(events.InlineQuery)
@@ -31,8 +30,8 @@ async def inline_handler(event):
     if not user:
         return await utils.respond_user_not_found(event, user_val)
     
-    
-        
+    # responding with user info
+    return await utils.respond_user_info(event, user)
 
 
 async def main():

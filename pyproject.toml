@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiohttp>=3.13.5",
+    "aiolimiter>=1.2.1",
+    "cachetools>=7.1.1",
     "colorlog>=6.10.1",
     "ossapi>=5.3.5",
     "telethon>=1.43.2",
@@ -17,6 +19,6 @@ indent-width = 4
 target-version = "py312"
 
 lint.select = ["I", "B", "UP", "N", "S", "C4", "E", "F"]
-lint.ignore = []
+lint.ignore = ["E701"]
 
 format.indent-style = "space"
