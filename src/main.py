@@ -51,8 +51,8 @@ async def inline_handler(event):
 
 @client.on(events.NewMessage(pattern='/about'))
 async def about_handler(event):
-    me_username = await client.get_me().username
-    await event.reply(f"""🤖 About {me_username}
+    me = await client.get_me()
+    await event.reply(f"""🤖 About {me.username}
 Author: **wandderq** (2026)
 This bot is free software. In accordance with the **GNU AGPLv3** license, the source code of this bot is open and available for inspection or improvement.
 📦 Source Code: https://github.com/wandderq/osuuserbot
