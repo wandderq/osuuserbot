@@ -101,6 +101,4 @@ uv.lock
 
 
 # osuuserbot
-db/telegram-bot.session
-db/users.db
-db/
+bot/
