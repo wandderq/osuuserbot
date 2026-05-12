@@ -18,9 +18,9 @@ from argparse import Namespace
 from pathlib import Path
 
 # getting & checking config file
-_config_path = Path('bot/osuuserbot.toml')
+_config_path = Path('bot/config.toml')
 if not _config_path.exists():
-    raise FileNotFoundError('osuuserbot.toml not found!')
+    raise FileNotFoundError('config.toml not found!')
 
 
 # loading config
