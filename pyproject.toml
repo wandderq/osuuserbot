@@ -10,6 +10,7 @@ dependencies = [
     "cachetools>=7.1.1",
     "colorlog>=6.10.1",
     "ossapi>=5.3.5",
+    "python-socks>=2.8.1",
     "telethon>=1.43.2",
 ]
 

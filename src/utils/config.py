@@ -39,3 +39,11 @@ osu = Namespace(
     client_id=_config['osu']['client_id'],
     client_secret=_config['osu']['client_secret']
 )
+
+mtproxy = Namespace(
+    server=_config['mtproxy']['server'],
+    port=_config['mtproxy']['port'],
+    secret=_config['mtproxy']['secret']
+) if 'mtproxy' in _config \
+  and all(key in _config['mtproxy'] for key in ['server', 'port', 'secret']) \
+  else None

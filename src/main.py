@@ -18,7 +18,7 @@ import logging as lg
 import sys
 from pathlib import Path
 
-from telethon import TelegramClient
+from telethon import TelegramClient, connection
 from telethon.events import InlineQuery, NewMessage
 
 from utils import config, setup_logging
@@ -27,12 +27,20 @@ from utils import config, setup_logging
 setup_logging()
 logger = lg.getLogger('osuuserbot')
 
+proxy_params = {
+    'connection': connection.ConnectionTcpMTProxyRandomizedIntermediate,
+    'proxy': (
+        config.mtproxy.server,
+        config.mtproxy.port,
+        config.mtproxy.secret,
+    )
+} if config.mtproxy is not None else {}
 
-# telegram bot client
 client = TelegramClient(
     Path('bot/telegram.session').absolute(),
     config.telegram.api_id,
-    config.telegram.api_hash
+    config.telegram.api_hash,
+    **proxy_params
 )
 
 
@@ -68,9 +76,9 @@ if __name__ == '__main__':
         sys.exit(0)
     
     except KeyboardInterrupt:
-        print("\n\033[32mInterrupted\033[0m")
+        print("\n\033[31mInterrupted\033[0m")
         sys.exit(0)
 
     except Exception as e:
-        print(f"\033[32m{e.__class__.__name__}\033[0m: {str(e)}")
+        print(f"\033[31m{e.__class__.__name__}\033[0m: {str(e)}")
         sys.exit(1)
