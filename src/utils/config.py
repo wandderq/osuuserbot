@@ -47,3 +47,8 @@ mtproxy = Namespace(
 ) if 'mtproxy' in _config \
   and all(key in _config['mtproxy'] for key in ['server', 'port', 'secret']) \
   else None
+
+metadata = Namespace(
+    author=_config['metadata']['author'],
+    repo_url=_config['metadata']['repo_url']
+)

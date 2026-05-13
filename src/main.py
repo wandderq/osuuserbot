@@ -21,7 +21,7 @@ from pathlib import Path
 from telethon import TelegramClient, connection
 from telethon.events import InlineQuery, NewMessage
 
-from utils import config, setup_logging
+from utils import config, setup_logging, get_text
 
 # logging setup
 setup_logging()
@@ -47,12 +47,24 @@ client = TelegramClient(
 # bot handlers
 @client.on(NewMessage(pattern='/start'))
 async def start_handler(event):
-    pass
+    await event.respond(
+        get_text(
+            'en', 'start'
+        ),
+        parse_mode='html'
+    )
 
 
 @client.on(NewMessage(pattern='/about'))
 async def about_handler(event):
-    pass
+    await event.respond(
+        get_text(
+            'en', 'about',
+            author=config.metadata.author,
+            repo_url=config.metadata.repo_url
+        ),
+        parse_mode='html'
+    )
 
 
 @client.on(InlineQuery)
