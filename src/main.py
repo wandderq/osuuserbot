@@ -21,7 +21,7 @@ from pathlib import Path
 from telethon import TelegramClient, connection
 from telethon.events import InlineQuery, NewMessage
 
-from utils import config, get_text, setup_logging
+from utils import config, get_text, setup_logging, is_valid_osu_user_id, is_valid_osu_username
 
 # logging setup
 setup_logging()
@@ -69,8 +69,17 @@ async def about_handler(event):
 
 @client.on(InlineQuery)
 async def inline_handler(event):
-    pass
+    query = event.query.query.strip()
+    if not query: return
 
+    # validating query
+    if is_valid_osu_user_id(query):
+        user_val = int(query)
+    elif is_valid_osu_username(query):
+        user_val = query
+    else:
+        return
+    
 
 # main function
 async def main():
