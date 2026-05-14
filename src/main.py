@@ -23,6 +23,7 @@ from telethon.events import InlineQuery, NewMessage
 
 from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username, setup_logging
 from bot.responses import respond_invalid_format, respond_user_not_found
+from osu import osu_service
 
 # logging setup
 setup_logging()
@@ -80,6 +81,11 @@ async def inline_handler(event):
         user_val = query
     else:
         return await respond_invalid_format(event, query)
+    
+    # getting user
+    user = await osu_service.get_user(user_val)
+    if not user:
+        return await respond_user_not_found(event, user_val)
     
     
 
