@@ -1,3 +1,4 @@
+# Python
 __pycache__/
 *.py[codz]
 *$py.class
@@ -92,8 +93,12 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 .streamlit/secrets.toml
-osuuserbot.toml
-.vscode
-uv.lock
-osuuserbot.session
 .python-version
+uv.lock
+
+# IDE
+.vscode/
+
+
+# osuuserbot
+/bot/

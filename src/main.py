@@ -14,66 +14,101 @@
 # along with this program.  If not, see <https://gnu.org>.
 
 import asyncio
+import logging as lg
 import sys
+from pathlib import Path
 
-from telethon import TelegramClient, events
+from telethon import TelegramClient, connection
+from telethon.events import InlineQuery, NewMessage
 
-import config
-import utils
-from logger import setup_logger
-from osu_service import osu_service
+from bot.responses import respond_invalid_format, respond_user_info, respond_user_not_found
+from osu import osu_service
+from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username, setup_logging
 
-client = TelegramClient('osuuserbot.session', config.telegram.api_id, config.telegram.api_hash)
-logger = setup_logger('osuuserbot')
+# logging setup
+setup_logging()
+logger = lg.getLogger('osuuserbot')
+
+proxy_params = {
+    'connection': connection.ConnectionTcpMTProxyRandomizedIntermediate,
+    'proxy': (
+        config.mtproxy.server,
+        config.mtproxy.port,
+        config.mtproxy.secret,
+    )
+} if config.mtproxy is not None else {}
+
+client = TelegramClient(
+    Path('bot/telegram.session').absolute(),
+    config.telegram.api_id,
+    config.telegram.api_hash,
+    **proxy_params
+)
 
 
-@client.on(events.InlineQuery)
+# bot handlers
+@client.on(NewMessage(pattern='/start'))
+async def start_handler(event):
+    await event.respond(
+        get_text(
+            'en', 'start'
+        ),
+        parse_mode='html'
+    )
+
+
+@client.on(NewMessage(pattern='/about'))
+async def about_handler(event):
+    await event.respond(
+        get_text(
+            'en', 'about',
+            author=config.metadata.author,
+            repo_url=config.metadata.repo_url
+        ),
+        parse_mode='html'
+    )
+
+
+@client.on(InlineQuery)
 async def inline_handler(event):
     query = event.query.query.strip()
     if not query: return
 
     # validating query
-    if utils.is_valid_osu_user_id(query):
+    if is_valid_osu_user_id(query):
         user_val = int(query)
-    elif utils.is_valid_osu_username(query):
+    elif is_valid_osu_username(query):
         user_val = query
     else:
-        return await utils.respond_invalid_format(event, query)
+        return await respond_invalid_format(event, query)
     
     # getting user
     user = await osu_service.get_user(user_val)
     if not user:
-        return await utils.respond_user_not_found(event, user_val)
+        return await respond_user_not_found(event, user_val)
     
-    # responding with user info
-    return await utils.respond_user_info(event, user)
+    return await respond_user_info(event, user)
+    
 
-
-@client.on(events.NewMessage(pattern='/about'))
-async def about_handler(event):
-    me = await client.get_me()
-    await event.reply(f"""🤖 About {me.username}
-Author: **wandderq** (2026)
-This bot is free software. In accordance with the **GNU AGPLv3** license, the source code of this bot is open and available for inspection or improvement.
-📦 Source Code: https://github.com/wandderq/osuuserbot
-You have the right to distribute and modify this code, provided that your changes also remain open-source under the AGPLv3 license.""")
-
-
+# main function
 async def main():
     logger.info('starting bot client')
     await client.start(bot_token=config.telegram.bot_token)
 
-    me = await client.get_me()
-
-    logger.info(f'@{me.username}/{me.id} started')
+    logger.info('bot started')
     await client.run_until_disconnected()
 
 
+# entry point
 if __name__ == '__main__':
     try:
         asyncio.run(main())
+        sys.exit(0)
     
     except KeyboardInterrupt:
-        print('\nKeyboardInterrupt')
+        print("\n\033[31mInterrupted\033[0m")
         sys.exit(0)
 
+    except Exception as e:
+        print(f"\033[31m{e.__class__.__name__}\033[0m: {str(e)}")
+        sys.exit(1)

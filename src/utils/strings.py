@@ -13,30 +13,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://gnu.org>.
 
-import logging as lg
-import sys
+import yaml
+from jinja2 import Template
 
-from colorlog import ColoredFormatter
+with open("strings.yml", encoding='utf-8') as file:
+    strings = yaml.safe_load(file)
 
 
-def setup_logger(name: str) -> lg.Logger:
-    stream_handler = lg.StreamHandler(stream=sys.stdout)
-    stream_handler.setFormatter(ColoredFormatter(
-        fmt="[{name} {log_color}{levelname}{reset}]: {message}",
-        style='{',
-        log_colors={
-            'DEBUG': 'blue',
-            'INFO': 'green',
-            'WARNING': 'yellow',
-            'ERROr': 'red',
-            'CRITICAL': 'red'
-        }
+def get_text(lang: str, key: str, **kwargs) -> str:
+    raw_template = strings.get(lang, {}).get(key, "")
+    return Template(raw_template).render(**kwargs)
 
-    ))
 
-    lg.basicConfig(
-        level=lg.DEBUG,
-        handlers=[stream_handler]
+def get_flag_emoji(country_code: str) -> str:
+    if not country_code or len(country_code) != 2:
+        return "🏳"
+    
+    return "".join(
+        chr(ord(char.upper()) + 0x1F1A5)
+        for char in country_code
     )
-
-    return lg.getLogger(name)
