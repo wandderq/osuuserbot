@@ -13,23 +13,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://gnu.org>.
 
-import yaml
-from jinja2 import Template
+import re
 
-with open("strings.yml", encoding='utf-8') as file:
-    strings = yaml.safe_load(file)
+valid_osu_username_pattern = re.compile(r'^[a-zA-Z0-9_\[\]\- ]+$')
 
 
-def get_text(lang: str, key: str, **kwargs) -> str:
-    raw_template = strings.get(lang, {}).get(key, "")
-    return Template(raw_template).render(**kwargs)
+def is_valid_osu_username(query: str):
+    if not (3 <= len(query) <= 15):
+        return False
+
+    return bool(valid_osu_username_pattern.match(query))
 
 
-def get_flag_emoji(country_code: str) -> str:
-    if not country_code or len(country_code) != 2:
-        return "🏳"
+def is_valid_osu_user_id(query: str):
+    if isinstance(query, str):
+        if not query.isdigit():
+            return False
+        query = int(query)
     
-    return "".join(
-        chr(ord(char.upper()) + 0x1F1A5)
-        for char in country_code
-    )
+    return isinstance(query, int) and query > 0
+

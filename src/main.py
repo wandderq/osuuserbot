@@ -21,7 +21,7 @@ from pathlib import Path
 from telethon import TelegramClient, connection
 from telethon.events import InlineQuery, NewMessage
 
-from utils import config, setup_logging, get_text
+from utils import config, get_text, setup_logging
 
 # logging setup
 setup_logging()
