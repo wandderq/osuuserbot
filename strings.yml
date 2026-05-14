@@ -20,3 +20,11 @@ en:
     • <b>Warranty:</b> Provided WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
     You can modify and redistribute this bot under the terms of the AGPLv3. Anyone interacting with this bot has the right to access its full source code via the GitHub link above.
+  
+  user-info: |
+    {{ status_emoji }} <a href="https://osu.ppy.sh/users/{{ user_id }}"><b>{{ user_name }}</b></a>
+    🎮 osu!{{ play_mode }}: <b>#{{ rank_global }}</b> | {{ flag_emoji }} <b>#{{ rank_local }}</b>
+
+    📊 <b>{{ pp }}</b> pp • <b>{{ accuracy }}</b>% • Lv. <b>{{ level }}</b>
+    🏅 SS: <b>{{ ss_count }}</b> • S: <b>{{ s_count }}</b> • A: <b>{{ a_count }}</b>
+    ⏱️ Playtime: <b>{{ play_time }}h</b> • Playcount: <b>{{ play_count }}</b>

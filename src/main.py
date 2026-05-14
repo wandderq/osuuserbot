@@ -21,9 +21,9 @@ from pathlib import Path
 from telethon import TelegramClient, connection
 from telethon.events import InlineQuery, NewMessage
 
-from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username, setup_logging
-from bot.responses import respond_invalid_format, respond_user_not_found
+from bot.responses import respond_invalid_format, respond_user_info, respond_user_not_found
 from osu import osu_service
+from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username, setup_logging
 
 # logging setup
 setup_logging()
@@ -87,6 +87,7 @@ async def inline_handler(event):
     if not user:
         return await respond_user_not_found(event, user_val)
     
+    return await respond_user_info(event, user)
     
 
 # main function
