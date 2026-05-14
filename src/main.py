@@ -21,7 +21,7 @@ from pathlib import Path
 from telethon import TelegramClient, connection
 from telethon.events import InlineQuery, NewMessage
 
-from utils import config, get_text, setup_logging, is_valid_osu_user_id, is_valid_osu_username
+from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username, setup_logging
 
 # logging setup
 setup_logging()
