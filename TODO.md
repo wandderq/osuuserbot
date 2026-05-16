@@ -1,2 +1,3 @@
 - [ ] User last visit time
 - [ ] Search for multipile users
+- [ ] User comparison e.g.: @osuuserbot mrekk vs cryshina
