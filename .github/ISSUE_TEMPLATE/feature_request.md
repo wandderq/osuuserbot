@@ -9,18 +9,25 @@ assignees: "wandderq"
 ## Problem
 <!-- what's annoying or missing? -->
 
-
 ## Solution
 <!-- how can we fix it? -->
 
-### Command example
-<!-- which command should solve this problem? -->
+### Example
+<!--
+how it will look after the fix?
+add some common and/or edge cases
+-->
 
-### Inline command example
-<!-- which inline request should solve this problem? -->
 
-### API endpoints
-<!-- which osu!api endpoint is needed? (optional) -->
+### Needed user information
+<!--
+what's needed to be known about the user? (optional)
+if you know which ossapi object can help - fell free to mention it
+
+e.g.:
+- User grade counts (`ossapi.User.statistics.grade_counts`)
+- User playcount (`ossapi.User.statistics.play_count`)
+-->
 
 
 ## Checklist
