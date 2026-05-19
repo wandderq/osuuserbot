@@ -13,42 +13,133 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://gnu.org>.
 
+import logging as lg
 import tomllib
-from argparse import Namespace
 from pathlib import Path
 
-# getting & checking config file
-_config_path = Path('bot/config.toml')
-if not _config_path.exists():
-    raise FileNotFoundError('config.toml not found!')
+
+class ConfigParseError(Exception):
+    pass
 
 
-# loading config
-with _config_path.open(mode='rb') as file:
-    _config = tomllib.load(file)
+class Config:
+    def __init__(self):
+        self.path = Path('config.toml').absolute()
+        self.logger = lg.getLogger('osuuserbot.config-loader')
+        self.schema = {
+            'telegram': {
+                'required': True,
+                'keywords': {
+                    'api_id': {'required': True, 'type': int},
+                    'api_hash': {'required': True, 'type': str},
+                    'bot_token': {'required': True, 'type': str}
+                }
+            },
+            'osu': {
+                'required': True,
+                'keywords': {
+                    'client_id': {'required': True, 'type': int},
+                    'client_secret': {'required': True, 'type': str}
+                }
+            },
+            'metadata': {
+                'required': True,
+                'keywords': {
+                    'bot_name': {'required': True, 'type': str},
+                    'bot_username': {'required': True, 'type': str},
+                    'source_code_url': {'required': True, 'type': str},
+                    'author': {'required': True, 'type': str}
+                }
+            },
+            'mtproxy': {
+                'required': False,
+                'keywords': {
+                    'server': {'required': True, 'type': str},
+                    'port': {'required': True, 'type': int},
+                    'secret': {'required': True, 'type': str}
+                }
+            }
+        }
+        self._data = {}  # raw dict from toml
+
+        for table_name in self.schema:
+            setattr(self, table_name, None)
 
 
-# setting variables
-telegram = Namespace(
-    api_id=_config['telegram']['api_id'],
-    api_hash=_config['telegram']['api_hash'],
-    bot_token=_config['telegram']['bot_token']
-)
+    def load(self) -> None:
+        if not self.path.exists():
+            cwd_str = str(Path.cwd())
+            raise ConfigParseError(f"Config file not found in {cwd_str}!")
+        
+        # trying to load config
+        try:
+            with self.path.open(mode="rb") as file:
+                self._data = tomllib.load(file)
 
-osu = Namespace(
-    client_id=_config['osu']['client_id'],
-    client_secret=_config['osu']['client_secret']
-)
+        except Exception as e:
+            raise ConfigParseError(f"Failed to parse TOML: {str(e)}") from e
+        
+        # validating config
+        self._validate()
+        
+        # saving config to attributes
+        for table_name, _ in self.schema.items():
+            if table_name in self._data:
+                setattr(self, table_name, self._data[table_name])
+            else:
+                setattr(self, table_name, None)
+        
+        self.logger.info(f"Config was successfully loaded from {self.path}")
 
-mtproxy = Namespace(
-    server=_config['mtproxy']['server'],
-    port=_config['mtproxy']['port'],
-    secret=_config['mtproxy']['secret']
-) if 'mtproxy' in _config \
-  and all(key in _config['mtproxy'] for key in ['server', 'port', 'secret']) \
-  else None
 
-metadata = Namespace(
-    author=_config['metadata']['author'],
-    repo_url=_config['metadata']['repo_url']
-)
+    def _validate(self) -> None:
+        for table_name, table_schema in self.schema.items():
+            table_required = table_schema.get('required', False)
+            table_present = table_name in self._data
+            
+            if table_required and not table_present:
+                raise ConfigParseError(f"Required table [{table_name}] is missing!")
+
+            if not table_present:
+                continue
+            
+            table_data = self._data[table_name]
+            if not isinstance(table_data, dict):
+                raise ConfigParseError(
+                    f"\'{table_name}\' should be table (dict), "
+                    f"but it\'s {type(table_data).__name__}"
+                )
+            
+            # validating keys
+            keywords_schema = table_schema.get('keywords', {})
+
+            for kw_name, kw_schema in keywords_schema.items():
+                kw_required = kw_schema.get('required', False)
+                kw_present = kw_name in table_data
+                
+                if kw_required and not kw_present:
+                    raise ConfigParseError(
+                        f"Required key {kw_name} is missing in the [{table_name}]"
+                    )
+                if not kw_present:
+                    continue
+                
+                # checking type
+                expected_type = kw_schema.get('type')
+                if expected_type is not None:
+                    actual_value = table_data[kw_name]
+                    if not isinstance(actual_value, expected_type):
+                        raise ConfigParseError(
+                            f"Key {table_name}.{kw_name} should be "
+                            f"{expected_type.__name__}, but it\'s {type(actual_value).__name__}"
+                        )
+            
+            allowed_keys = set(keywords_schema.keys())
+            extra_keys = set(table_data.keys()) - allowed_keys
+            if extra_keys:
+                self.logger.warning(
+                    f"[{table_name}] contains extra keysr: {extra_keys}"
+                )
+
+config = Config()
+config.load()

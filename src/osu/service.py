@@ -25,8 +25,8 @@ from utils import config
 class OsuService:
     def __init__(self):
         self.osuapi = OssapiAsync(
-            client_id=config.osu.client_id,
-            client_secret=config.osu.client_secret
+            client_id=config.osu['client_id'],
+            client_secret=config.osu['client_secret']
         )
 
         self.limiter = AsyncLimiter(max_rate=20, time_period=1)

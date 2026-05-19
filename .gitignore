@@ -102,3 +102,4 @@ uv.lock
 
 # osuuserbot
 /bot/
+config.toml

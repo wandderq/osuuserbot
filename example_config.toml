@@ -1,0 +1,21 @@
+# required tables
+[telegram]
+api_id = 123123
+api_hash = "hash" 
+bot_token = "token"
+
+[osu]
+client_id = 727
+client_secret = "secret"
+
+[metadata]
+bot_name = "name"
+bot_username = "username" 
+source_code_url = "https://github.com/someone/somerepo" 
+author = "someone"
+
+# unrequired tables
+[mtproxy]
+server = "some.mtproxy.server"
+port = 666
+secret = "secret2"
