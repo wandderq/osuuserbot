@@ -23,35 +23,41 @@ from telethon.events import InlineQuery, NewMessage
 
 from bot.responses import respond_invalid_format, respond_user_info, respond_user_not_found
 from osu import osu_service
-from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username, setup_logging
+from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username
 
-# logging setup
-setup_logging()
 logger = lg.getLogger('osuuserbot')
 
+# initialising the client
+connections = {
+    'randomized': connection.ConnectionTcpMTProxyRandomizedIntermediate,
+    'abridged': connection.ConnectionTcpMTProxyAbridged,
+    'intermediate': connection.ConnectionTcpIntermediate
+}
+
 proxy_params = {
-    'connection': connection.ConnectionTcpMTProxyRandomizedIntermediate,
+    'connection': connections[config.mtproxy['connection']],
     'proxy': (
-        config.mtproxy.server,
-        config.mtproxy.port,
-        config.mtproxy.secret,
+        config.mtproxy['server'],
+        config.mtproxy['port'],
+        config.mtproxy['secret'],
     )
 } if config.mtproxy is not None else {}
 
 client = TelegramClient(
     Path('bot/telegram.session').absolute(),
-    config.telegram.api_id,
-    config.telegram.api_hash,
+    config.telegram['api_id'],
+    config.telegram['api_hash'],
     **proxy_params
 )
-
 
 # bot handlers
 @client.on(NewMessage(pattern='/start'))
 async def start_handler(event):
     await event.respond(
         get_text(
-            'en', 'start'
+            'en', 'start',
+            bot_name=config.metadata['bot_name'],
+            bot_username=config.metadata['bot_username'],
         ),
         parse_mode='html'
     )
@@ -62,8 +68,10 @@ async def about_handler(event):
     await event.respond(
         get_text(
             'en', 'about',
-            author=config.metadata.author,
-            repo_url=config.metadata.repo_url
+            bot_name=config.metadata['bot_name'],
+            bot_username=config.metadata['bot_username'],
+            author=config.metadata['author'],
+            source_code_url=config.metadata['source_code_url']
         ),
         parse_mode='html'
     )
@@ -93,7 +101,7 @@ async def inline_handler(event):
 # main function
 async def main():
     logger.info('starting bot client')
-    await client.start(bot_token=config.telegram.bot_token)
+    await client.start(bot_token=config.telegram['bot_token'])
 
     logger.info('bot started')
     await client.run_until_disconnected()

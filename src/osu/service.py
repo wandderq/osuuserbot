@@ -25,12 +25,18 @@ from utils import config
 class OsuService:
     def __init__(self):
         self.osuapi = OssapiAsync(
-            client_id=config.osu.client_id,
-            client_secret=config.osu.client_secret
+            client_id=config.osu['client_id'],
+            client_secret=config.osu['client_secret']
         )
 
-        self.limiter = AsyncLimiter(max_rate=20, time_period=1)
-        self.cache = TTLCache(maxsize=1000, ttl=300)
+        self.limiter = AsyncLimiter(
+            max_rate=config.osu['service']['max_request_rate'],
+            time_period=1
+        )
+        self.cache = TTLCache(
+            maxsize=config.osu['service']['ttlcache']['max_size'],
+            ttl=config.osu['service']['ttlcache']['ttl']
+        )
         self.logger = lg.getLogger('osuuserbot.osu_service')
     
 

@@ -1,0 +1,25 @@
+[telegram]
+api_id = 123321
+api_hash = "apihash"
+bot_token = "bottoken"
+
+[osu]
+client_id = 123123
+client_secret = "osusecret"
+
+[osu.service]
+max_request_rate = 20
+ttlcache.max_size = 1000
+ttlcache.ttl = 300
+
+[mtproxy]
+server = "some.server.com"
+port = 5678
+secret = "123"
+connection = "123"
+
+[metadata]
+bot_name = "osuuserbot"
+bot_username = "osuuserbot"
+source_code_url = "https://github.com/wandderq/osuuserbot"
+author = "wandderq"

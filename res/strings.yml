@@ -1,20 +1,20 @@
 en:
   start: |
-    <b>Welcome to osuuserbot!</b>
+    <b>Welcome to {{ bot_name }}!</b>
 
     I can display quick osu! player statistics.
 
     <b>How to use:</b>
-    This bot works mainly in <b>inline mode</b>. Just type <code>@osuuserbot</code> followed by the osu! username in any chat.
+    This bot works mainly in <b>inline mode</b>. Just type <code>@{{ bot_username }}</code> followed by the osu! username in any chat.
 
-    <i>Example:</i> <code>@osuuserbot peppy</code>
+    <i>Example:</i> <code>@{{ bot_username }} peppy</code>
 
   about: |
-    <b>About osuuserbot</b>
+    <b>About {{ bot_name }}</b>
 
     A minimalist Telegram bot for fetching osu! player profiles.
 
-    • <b>Source code:</b> {{ repo_url }}
+    • <b>Source code:</b> {{ source_code_url }}
     • <b>Copyright:</b> © 2026 {{ author }}
     • <b>License:</b> This bot is free software licensed under the GNU Affero General Public License v3.0 (AGPLv3).
     • <b>Warranty:</b> Provided WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

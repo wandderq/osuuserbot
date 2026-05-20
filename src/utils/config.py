@@ -13,42 +13,208 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://gnu.org>.
 
+import logging as lg
 import tomllib
-from argparse import Namespace
 from pathlib import Path
 
-# getting & checking config file
-_config_path = Path('bot/config.toml')
-if not _config_path.exists():
-    raise FileNotFoundError('config.toml not found!')
+
+class ConfigParseError(Exception):
+    pass
 
 
-# loading config
-with _config_path.open(mode='rb') as file:
-    _config = tomllib.load(file)
+class Config:
+    def __init__(self):
+        self.path = Path('config.toml').absolute()
+        self.logger = lg.getLogger('osuuserbot.config-loader')
+        self.schema = {
+            'telegram': {
+                'required': True,
+                'keywords': {
+                    'api_id': {'required': True, 'type': int},
+                    'api_hash': {'required': True, 'type': str},
+                    'bot_token': {'required': True, 'type': str}
+                }
+            },
+            'osu': {
+                'required': True,
+                'keywords': {
+                    'client_id': {'required': True, 'type': int},
+                    'client_secret': {'required': True, 'type': str},
+                },
+                'subtables': {
+                    'service': {
+                        'required': False,
+                        'keywords': {
+                            'max_request_rate': {'required': False, 'type': int, 'default': 20},
+                        },
+                        'subtables': {
+                            'ttlcache': {
+                                'required': False,
+                                'keywords': {
+                                    'max_size': {'required': False, 'type': int, 'default': 1000},
+                                    'ttl': {'required': False, 'type': int, 'default': 300}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            'metadata': {
+                'required': True,
+                'keywords': {
+                    'bot_name': {'required': True, 'type': str},
+                    'bot_username': {'required': True, 'type': str},
+                    'source_code_url': {'required': True, 'type': str},
+                    'author': {'required': True, 'type': str}
+                }
+            },
+            'mtproxy': {
+                'required': False,
+                'keywords': {
+                    'server': {'required': True, 'type': str},
+                    'port': {'required': True, 'type': int},
+                    'secret': {'required': True, 'type': str},
+                    'connection': {
+                        'required': False,
+                        'type': str,
+                        'default': 'randomized',
+                        'choices': ['randomized', 'abridged', 'intermediate']
+                    }
+                }
+            }
+        }
+
+        self._load()
 
 
-# setting variables
-telegram = Namespace(
-    api_id=_config['telegram']['api_id'],
-    api_hash=_config['telegram']['api_hash'],
-    bot_token=_config['telegram']['bot_token']
-)
+    def _load(self):
+        if not self.path.exists():
+            raise ConfigParseError(f"Config file not found: {self.path}")
+        
+        # loading raw data
+        try:
+            with self.path.open(mode="rb") as file:
+                data = tomllib.load(file)
 
-osu = Namespace(
-    client_id=_config['osu']['client_id'],
-    client_secret=_config['osu']['client_secret']
-)
+            self.logger.info(f"Config loaded from {self.path}")
 
-mtproxy = Namespace(
-    server=_config['mtproxy']['server'],
-    port=_config['mtproxy']['port'],
-    secret=_config['mtproxy']['secret']
-) if 'mtproxy' in _config \
-  and all(key in _config['mtproxy'] for key in ['server', 'port', 'secret']) \
-  else None
+        except Exception as e:
+            raise ConfigParseError(f"TOML parsing error: {str(e)}") from e
+        
+        # validating data
+        self._validate_data(data)
 
-metadata = Namespace(
-    author=_config['metadata']['author'],
-    repo_url=_config['metadata']['repo_url']
-)
+        # applying validated data
+        for table_name in self.schema:
+            setattr(self, table_name, data.get(table_name))
+    
+
+    def _validate_data(self, data):
+        for table_name, table_schema in self.schema.items():
+            required = table_schema.get('required', False)
+            exists = table_name in data
+
+            if required and not exists:
+                raise ConfigParseError(f'Missing required table [{table_name}]')
+            
+            if not exists:
+                data[table_name] = {}
+            
+            table_data = data[table_name]
+            table_datatype_name = type(table_data).__name__
+
+            if not isinstance(table_data, dict):
+                raise ConfigParseError(
+                    f'{table_name} must be a table, '
+                    f'got {table_datatype_name}'
+                )
+            
+            self._validate_table(table_schema, table_data, table_name)
+
+
+    def _validate_table(self, schema, data, path=""):
+        self.logger.debug(f'validating {path}')
+
+        # parsing keywords
+        expected_keywords = schema.get('keywords', {})
+
+        for keyword_name, keyword_schema in expected_keywords.items():
+            current_path = f"{path}.{keyword_name}" if path else keyword_name
+
+            required = keyword_schema.get('required', False)
+            default = keyword_schema.get('default')
+            choices = keyword_schema.get('choices', None)
+            expected_type = keyword_schema.get('type')
+
+            key_exists = keyword_name in data
+
+            self.logger.debug(f'validating {current_path}')
+
+            if not key_exists:
+                if required:
+                    raise ConfigParseError(f'Missing required key: {current_path}')
+                
+                if default is not None:
+                    data[keyword_name] = default
+                    self.logger.warning(f'using default value for {current_path}: {default}')
+                    key_exists = True
+                
+                else:
+                    self.logger.warning(f'skipping unknown key: {current_path}')
+                    continue
+
+            if key_exists and expected_type is not None:
+                value = data[keyword_name]
+                value_type_name = type(value).__name__
+
+                if not isinstance(value, expected_type):
+                    try:
+                        data[keyword_name] = expected_type(value)
+                        self.logger.debug(
+                            f'{current_path} converted from {value_type_name} '
+                            f'to {expected_type.__name__}'
+                        )
+                    
+                    except ValueError as e:
+                        raise ConfigParseError(
+                            f'{current_path} must be of type {expected_type.__name__} ',
+                            f'got {value_type_name}'
+                        ) from e
+
+            if choices is not None and value not in choices:
+                choices_str = ', '.join(choices)
+                raise ConfigParseError(
+                    f'Invalid value for {current_path}: {value}. '
+                    f'Choose from: {choices_str}'
+                )
+        
+        # parsing subtables
+        subtables = schema.get('subtables', {})
+
+        for subtable_name, subtable_schema in subtables.items():
+            current_path = f"{path}.{subtable_name}" if path else subtable_name
+
+            required = subtable_schema.get('required', False)
+            subtable_exists = subtable_name in data
+
+            if not subtable_exists:
+                if required:
+                    raise ConfigParseError(f'Missing required subtable [{current_path}]')
+                
+                else:
+                    data[subtable_name] = {}
+            
+            subtable_data = data[subtable_name]
+            subtable_datatype_name = type(subtable_data).__name__
+
+            if not isinstance(subtable_data, dict):
+                raise ConfigParseError(
+                    f'{current_path} must be a table, '
+                    f'got {subtable_datatype_name}'
+                )
+            
+            self._validate_table(subtable_schema, subtable_data, current_path)
+
+
+
+config = Config()
