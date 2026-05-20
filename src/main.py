@@ -27,8 +27,15 @@ from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username
 
 logger = lg.getLogger('osuuserbot')
 
+# initialising the client
+connections = {
+    'randomized': connection.ConnectionTcpMTProxyRandomizedIntermediate,
+    'abridged': connection.ConnectionTcpMTProxyAbridged,
+    'intermediate': connection.ConnectionTcpIntermediate
+}
+
 proxy_params = {
-    'connection': connection.ConnectionTcpMTProxyRandomizedIntermediate,
+    'connection': connections[config.mtproxy['connection']],
     'proxy': (
         config.mtproxy['server'],
         config.mtproxy['port'],
@@ -42,7 +49,6 @@ client = TelegramClient(
     config.telegram['api_hash'],
     **proxy_params
 )
-
 
 # bot handlers
 @client.on(NewMessage(pattern='/start'))

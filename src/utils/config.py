@@ -66,7 +66,13 @@ class Config:
                 'keywords': {
                     'server': {'required': True, 'type': str},
                     'port': {'required': True, 'type': int},
-                    'secret': {'required': True, 'type': str}
+                    'secret': {'required': True, 'type': str},
+                    'connection': {
+                        'required': False,
+                        'type': str,
+                        'default': 'randomized',
+                        'choices': ['randomized', 'abridged', 'intermediate']
+                    }
                 }
             }
         }
@@ -127,13 +133,15 @@ class Config:
 
         for keyword_name, keyword_schema in expected_keywords.items():
             current_path = f"{path}.{keyword_name}" if path else keyword_name
-            self.logger.debug(f'validating {current_path}')
 
             required = keyword_schema.get('required', False)
             default = keyword_schema.get('default')
+            choices = keyword_schema.get('choices', None)
             expected_type = keyword_schema.get('type')
 
             key_exists = keyword_name in data
+
+            self.logger.debug(f'validating {current_path}')
 
             if not key_exists:
                 if required:
@@ -147,7 +155,7 @@ class Config:
                 else:
                     self.logger.warning(f'skipping unknown key: {current_path}')
                     continue
-            
+
             if key_exists and expected_type is not None:
                 value = data[keyword_name]
                 value_type_name = type(value).__name__
@@ -165,6 +173,13 @@ class Config:
                             f'{current_path} must be of type {expected_type.__name__} ',
                             f'got {value_type_name}'
                         ) from e
+
+            if choices is not None and value not in choices:
+                choices_str = ', '.join(choices)
+                raise ConfigParseError(
+                    f'Invalid value for {current_path}: {value}. '
+                    f'Choose from: {choices_str}'
+                )
         
         # parsing subtables
         subtables = schema.get('subtables', {})
