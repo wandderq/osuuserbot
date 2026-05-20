@@ -23,10 +23,8 @@ from telethon.events import InlineQuery, NewMessage
 
 from bot.responses import respond_invalid_format, respond_user_info, respond_user_not_found
 from osu import osu_service
-from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username, setup_logging
+from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username
 
-# logging setup
-setup_logging()
 logger = lg.getLogger('osuuserbot')
 
 proxy_params = {

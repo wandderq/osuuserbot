@@ -29,8 +29,14 @@ class OsuService:
             client_secret=config.osu['client_secret']
         )
 
-        self.limiter = AsyncLimiter(max_rate=20, time_period=1)
-        self.cache = TTLCache(maxsize=1000, ttl=300)
+        self.limiter = AsyncLimiter(
+            max_rate=config.osu['max_request_rate'],
+            time_period=1
+        )
+        self.cache = TTLCache(
+            maxsize=config.osu['ttlcache']['max_size'],
+            ttl=config.osu['ttlcache']['ttl']
+        )
         self.logger = lg.getLogger('osuuserbot.osu_service')
     
 

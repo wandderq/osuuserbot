@@ -39,7 +39,17 @@ class Config:
                 'required': True,
                 'keywords': {
                     'client_id': {'required': True, 'type': int},
-                    'client_secret': {'required': True, 'type': str}
+                    'client_secret': {'required': True, 'type': str},
+                    'max_request_rate': {'required': False, 'type': int, 'default': 20}
+                },
+                'subtables': {
+                    'ttlcache': {
+                        'required': False,
+                        'keywords': {
+                            'max_size': {'required': False, 'type': int, 'default': 1000},
+                            'ttl': {'required': False, 'type': int, 'default': 300}
+                        }
+                    }
                 }
             },
             'metadata': {
@@ -60,86 +70,129 @@ class Config:
                 }
             }
         }
-        self._data = {}  # raw dict from toml
 
-        for table_name in self.schema:
-            setattr(self, table_name, None)
+        self._load()
 
 
-    def load(self) -> None:
+    def _load(self):
         if not self.path.exists():
-            cwd_str = str(Path.cwd())
-            raise ConfigParseError(f"Config file not found in {cwd_str}!")
+            raise ConfigParseError(f"Config file not found: {self.path}")
         
-        # trying to load config
+        # loading raw data
         try:
             with self.path.open(mode="rb") as file:
-                self._data = tomllib.load(file)
+                data = tomllib.load(file)
+
+            self.logger.info(f"Config loaded from {self.path}")
 
         except Exception as e:
-            raise ConfigParseError(f"Failed to parse TOML: {str(e)}") from e
+            raise ConfigParseError(f"TOML parsing error: {str(e)}") from e
         
-        # validating config
-        self._validate()
-        
-        # saving config to attributes
-        for table_name, _ in self.schema.items():
-            if table_name in self._data:
-                setattr(self, table_name, self._data[table_name])
-            else:
-                setattr(self, table_name, None)
-        
-        self.logger.info(f"Config was successfully loaded from {self.path}")
+        # validating data
+        self._validate_data(data)
 
+        # applying validated data
+        for table_name in self.schema:
+            setattr(self, table_name, data.get(table_name))
+    
 
-    def _validate(self) -> None:
+    def _validate_data(self, data):
         for table_name, table_schema in self.schema.items():
-            table_required = table_schema.get('required', False)
-            table_present = table_name in self._data
-            
-            if table_required and not table_present:
-                raise ConfigParseError(f"Required table [{table_name}] is missing!")
+            required = table_schema.get('required', False)
+            exists = table_name in data
 
-            if not table_present:
-                continue
+            if required and not exists:
+                raise ConfigParseError(f'Missing required table [{table_name}]')
             
-            table_data = self._data[table_name]
+            if not exists:
+                data[table_name] = {}
+            
+            table_data = data[table_name]
+            table_datatype_name = type(table_data).__name__
+
             if not isinstance(table_data, dict):
                 raise ConfigParseError(
-                    f"\'{table_name}\' should be table (dict), "
-                    f"but it\'s {type(table_data).__name__}"
+                    f'{table_name} must be a table, '
+                    f'got {table_datatype_name}'
                 )
             
-            # validating keys
-            keywords_schema = table_schema.get('keywords', {})
+            self._validate_table(table_schema, table_data, table_name)
 
-            for kw_name, kw_schema in keywords_schema.items():
-                kw_required = kw_schema.get('required', False)
-                kw_present = kw_name in table_data
+
+    def _validate_table(self, schema, data, path=""):
+        self.logger.debug(f'validating {path}')
+
+        # parsing keywords
+        expected_keywords = schema.get('keywords', {})
+
+        for keyword_name, keyword_schema in expected_keywords.items():
+            current_path = f"{path}.{keyword_name}" if path else keyword_name
+            self.logger.debug(f'validating {current_path}')
+
+            required = keyword_schema.get('required', False)
+            default = keyword_schema.get('default')
+            expected_type = keyword_schema.get('type')
+
+            key_exists = keyword_name in data
+
+            if not key_exists:
+                if required:
+                    raise ConfigParseError(f'Missing required key: {current_path}')
                 
-                if kw_required and not kw_present:
-                    raise ConfigParseError(
-                        f"Required key {kw_name} is missing in the [{table_name}]"
-                    )
-                if not kw_present:
+                if default is not None:
+                    data[keyword_name] = default
+                    self.logger.warning(f'using default value for {current_path}: {default}')
+                    key_exists = True
+                
+                else:
+                    self.logger.warning(f'skipping unknown key: {current_path}')
                     continue
-                
-                # checking type
-                expected_type = kw_schema.get('type')
-                if expected_type is not None:
-                    actual_value = table_data[kw_name]
-                    if not isinstance(actual_value, expected_type):
-                        raise ConfigParseError(
-                            f"Key {table_name}.{kw_name} should be "
-                            f"{expected_type.__name__}, but it\'s {type(actual_value).__name__}"
-                        )
             
-            allowed_keys = set(keywords_schema.keys())
-            extra_keys = set(table_data.keys()) - allowed_keys
-            if extra_keys:
-                self.logger.warning(
-                    f"[{table_name}] contains extra keysr: {extra_keys}"
+            if key_exists and expected_type is not None:
+                value = data[keyword_name]
+                value_type_name = type(value).__name__
+
+                if not isinstance(value, expected_type):
+                    try:
+                        data[keyword_name] = expected_type(value)
+                        self.logger.debug(
+                            f'{current_path} converted from {value_type_name} '
+                            f'to {expected_type.__name__}'
+                        )
+                    
+                    except ValueError as e:
+                        raise ConfigParseError(
+                            f'{current_path} must be of type {expected_type.__name__} ',
+                            f'got {value_type_name}'
+                        ) from e
+        
+        # parsing subtables
+        subtables = schema.get('subtables', {})
+
+        for subtable_name, subtable_schema in subtables.items():
+            current_path = f"{path}.{subtable_name}" if path else subtable_name
+
+            required = subtable_schema.get('required', False)
+            subtable_exists = subtable_name in data
+
+            if not subtable_exists:
+                if required:
+                    raise ConfigParseError(f'Missing required subtable [{current_path}]')
+                
+                else:
+                    data[subtable_name] = {}
+            
+            subtable_data = data[subtable_name]
+            subtable_datatype_name = type(subtable_data).__name__
+
+            if not isinstance(subtable_data, dict):
+                raise ConfigParseError(
+                    f'{current_path} must be a table, '
+                    f'got {subtable_datatype_name}'
                 )
+            
+            self._validate_table(subtable_schema, subtable_data, current_path)
+
+
 
 config = Config()
-config.load()
