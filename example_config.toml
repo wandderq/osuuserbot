@@ -1,21 +1,25 @@
-# required tables
 [telegram]
-api_id = 123123
-api_hash = "hash" 
-bot_token = "token"
+api_id = 123321
+api_hash = "apihash"
+bot_token = "bottoken"
 
 [osu]
-client_id = 727
-client_secret = "secret"
+client_id = 123123
+client_secret = "osusecret"
+
+[osu.service]
+max_request_rate = 20
+ttlcache.max_size = 1000
+ttlcache.ttl = 300
+
+[mtproxy]
+server = "some.server.com"
+port = 5678
+secret = "123"
+connection = "123"
 
 [metadata]
-bot_name = "name"
-bot_username = "username" 
-source_code_url = "https://github.com/someone/somerepo" 
-author = "someone"
-
-# unrequired tables
-[mtproxy]
-server = "some.mtproxy.server"
-port = 666
-secret = "secret2"
+bot_name = "osuuserbot"
+bot_username = "osuuserbot"
+source_code_url = "https://github.com/wandderq/osuuserbot"
+author = "wandderq"

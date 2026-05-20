@@ -40,14 +40,21 @@ class Config:
                 'keywords': {
                     'client_id': {'required': True, 'type': int},
                     'client_secret': {'required': True, 'type': str},
-                    'max_request_rate': {'required': False, 'type': int, 'default': 20}
                 },
                 'subtables': {
-                    'ttlcache': {
+                    'service': {
                         'required': False,
                         'keywords': {
-                            'max_size': {'required': False, 'type': int, 'default': 1000},
-                            'ttl': {'required': False, 'type': int, 'default': 300}
+                            'max_request_rate': {'required': False, 'type': int, 'default': 20},
+                        },
+                        'subtables': {
+                            'ttlcache': {
+                                'required': False,
+                                'keywords': {
+                                    'max_size': {'required': False, 'type': int, 'default': 1000},
+                                    'ttl': {'required': False, 'type': int, 'default': 300}
+                                }
+                            }
                         }
                     }
                 }
