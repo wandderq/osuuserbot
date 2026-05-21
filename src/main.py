@@ -18,10 +18,10 @@ import logging as lg
 import sys
 from pathlib import Path
 
-from telethon import TelegramClient
+from telethon import TelegramClient, errors
 from telethon.events import InlineQuery, NewMessage
 
-from bot.responses import respond_invalid_format, respond_user_info, respond_user_not_found
+from bot.responses import respond_invalid_format, respond_user_not_found, respond_users
 from osu import osu_service
 from utils import CONNECTIONS, config, get_text, is_valid_osu_user_id, is_valid_osu_username
 
@@ -74,22 +74,33 @@ async def about_handler(event):
 @client.on(InlineQuery)
 async def inline_handler(event):
     query = event.query.query.strip()
-    if not query: return
-
-    # validating query
-    if is_valid_osu_user_id(query):
-        user_val = int(query)
-    elif is_valid_osu_username(query):
-        user_val = query
-    else:
-        return await respond_invalid_format(event, query)
+    if not query:
+        return
     
-    # getting user
-    user = await osu_service.get_user(user_val)
-    if not user:
-        return await respond_user_not_found(event, user_val)
-    
-    return await respond_user_info(event, user)
+    try:
+        # validating query
+        search_param = None
+        if is_valid_osu_user_id(query):
+            search_param = int(query)
+        elif is_valid_osu_username(query):
+            search_param = query
+        else:
+            await respond_invalid_format(event, query)
+            return
+        
+        # searching users
+        users = await osu_service.search_users(search_param)
+        if not users:
+            await respond_user_not_found(event, query)
+            return
+        
+        await respond_users(event, users)
+        
+    except errors.rpcerrorlist.QueryIdInvalidError:
+        logger.debug(f"Inline query {event.id} already answered")
+        
+    except Exception as e:
+        logger.error(f"Error in inline_handler: {e}", exc_info=True)
     
 
 # main function

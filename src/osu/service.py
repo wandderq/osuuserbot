@@ -17,7 +17,7 @@ import logging as lg
 
 from aiolimiter import AsyncLimiter
 from cachetools import TTLCache
-from ossapi import OssapiAsync
+from ossapi import OssapiAsync, User
 
 from utils import config
 
@@ -54,6 +54,28 @@ class OsuService:
             
             except Exception as e:
                 self.logger.error(f'Error requesting to osu!api: {str(e)}')
+                return None
+
+
+    async def search_users(self, query: str | int) -> list[User] | None:
+        cache_key = f"search_{str(query)}"
+        if cache_key in self.cache:
+            self.logger.debug(f'using cached search result for query: \'{query}\'')
+            return self.cache[cache_key]
+
+        async with self.limiter:
+            try:
+                self.logger.debug(f'searching users with query: \'{query}\'')
+                result = await self.osuapi.search(str(query), mode="user")
+                users = [
+                    await user.expand()
+                    for user in result.users.data[:5]
+                ]
+                self.cache[cache_key] = users
+                return users
+
+            except Exception as e:
+                self.logger.error(f'Error searching users via osu!api: {str(e)}')
                 return None
 
 osu_service = OsuService()
