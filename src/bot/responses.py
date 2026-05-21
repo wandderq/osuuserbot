@@ -80,12 +80,6 @@ async def respond_user_not_found(event, user_val: str | int):
     await event.answer([response], cache_time=3000)
 
 
-async def respond_user_info(event, user: User):
-    response = get_user_info_response(event, user)
-
-    await event.answer([response], cache_time=120)
-
-
 async def respond_users(event, users: list[User]):
     responses = [
         get_user_info_response(event, user)
