@@ -70,6 +70,7 @@ class Config:
             },
             'mtproxy': {
                 'required': False,
+                'default': None,
                 'keywords': {
                     'server': {'required': True, 'type': str},
                     'port': {'required': True, 'type': int},
@@ -118,10 +119,15 @@ class Config:
                 raise ConfigParseError(f'Missing required table [{table_name}]')
             
             if not exists:
-                data[table_name] = {}
-            
+                default = table_schema.get('default', {})
+                data[table_name] = default
+          
             table_data = data[table_name]
             table_datatype_name = type(table_data).__name__
+
+            if table_data is None:
+                self.logger.warning(f'skipping table: [{table_name}]')
+                continue
 
             if not isinstance(table_data, dict):
                 raise ConfigParseError(
@@ -129,10 +135,10 @@ class Config:
                     f'got {table_datatype_name}'
                 )
             
-            self._validate_table(table_schema, table_data, table_name)
+            self._validate_table(table_schema, table_data, table_name, required)
 
 
-    def _validate_table(self, schema, data, path=""):
+    def _validate_table(self, schema, data, path="", table_required=True):
         self.logger.debug(f'validating {path}')
 
         # parsing keywords
@@ -151,7 +157,7 @@ class Config:
             self.logger.debug(f'validating {current_path}')
 
             if not key_exists:
-                if required:
+                if required and table_required:
                     raise ConfigParseError(f'Missing required key: {current_path}')
                 
                 if default is not None:
