@@ -19,6 +19,7 @@ setup_logging()
 
 from utils.checks import is_valid_osu_user_id, is_valid_osu_username  # noqa: E402
 from utils.config import config  # noqa: E402
+from utils.const import CONFIG_SCHEMA, CONNECTIONS  # noqa: E402
 from utils.strings import get_flag_emoji, get_text  # noqa: E402
 
 __all__ = [
@@ -27,5 +28,7 @@ __all__ = [
     'is_valid_osu_username',
     'setup_logging',
     'get_text',
-    'get_flag_emoji'
+    'get_flag_emoji',
+    'CONNECTIONS',
+    'CONFIG_SCHEMA'
 ]

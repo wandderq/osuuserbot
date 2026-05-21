@@ -18,24 +18,18 @@ import logging as lg
 import sys
 from pathlib import Path
 
-from telethon import TelegramClient, connection
+from telethon import TelegramClient
 from telethon.events import InlineQuery, NewMessage
 
 from bot.responses import respond_invalid_format, respond_user_info, respond_user_not_found
 from osu import osu_service
-from utils import config, get_text, is_valid_osu_user_id, is_valid_osu_username
+from utils import CONNECTIONS, config, get_text, is_valid_osu_user_id, is_valid_osu_username
 
 logger = lg.getLogger('osuuserbot')
 
 # initialising the client
-connections = {
-    'randomized': connection.ConnectionTcpMTProxyRandomizedIntermediate,
-    'abridged': connection.ConnectionTcpMTProxyAbridged,
-    'intermediate': connection.ConnectionTcpIntermediate
-}
-
 proxy_params = {
-    'connection': connections[config.mtproxy['connection']],
+    'connection': CONNECTIONS[config.mtproxy['connection']],
     'proxy': (
         config.mtproxy['server'],
         config.mtproxy['port'],
