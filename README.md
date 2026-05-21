@@ -19,8 +19,6 @@
 
 The bot works primarily in *inline mode*, allowing you to quickly send stats in any chat.
 
-Try it out: [**@osuuserbot**](https://t.me/osuuserbot)
-
 ### Features
 - Display brief user stats: `@osuuserbot peppy`
 
