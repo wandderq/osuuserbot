@@ -20,6 +20,48 @@ from ossapi import User
 from utils import get_flag_emoji, get_text
 
 
+def get_user_info_response(event, user: User):
+    user_id = user.id
+    user_name = html.escape(user.username)
+    status_emoji = "🟢" if user.is_online else "🔴"
+    play_mode = user.playmode if not user.playmode == 'osu' else 'std'
+
+    flag_emoji = get_flag_emoji(user.country_code)
+    rank_global = str(user.statistics.global_rank) \
+        if user.statistics.global_rank is not None else '-'
+    rank_local = str(user.statistics.country_rank) \
+        if user.statistics.country_rank is not None else '-'
+
+    pp = round(user.statistics.pp)
+    accuracy = round(user.statistics.accuracy * 100, 3)
+    level = user.statistics.level.current
+
+    ss_count = user.statistics.grade_counts.ss
+    s_count = user.statistics.grade_counts.s
+    a_count = user.statistics.grade_counts.a
+
+    play_time = round(user.statistics.play_time / 3600, 1)
+    play_count = user.statistics.play_count
+
+    text = get_text(
+        'en', 'user-info',
+        user_id=user_id, user_name=user_name, status_emoji=status_emoji,
+        play_mode=play_mode, rank_global=rank_global, flag_emoji=flag_emoji,
+        rank_local=rank_local, pp=pp, accuracy=accuracy, level=level,
+        ss_count=ss_count, s_count=s_count, a_count=a_count,
+        play_time=play_time, play_count=play_count
+    )
+
+    response = event.builder.article(
+        title=user.username,
+        description=f'#{rank_global} • {pp}pp',
+        text=text,
+        parse_mode='html'
+    )
+
+    return response
+
+
 async def respond_invalid_format(event, query: str):
     response = event.builder.article(
         title='Invalid format',
@@ -38,42 +80,10 @@ async def respond_user_not_found(event, user_val: str | int):
     await event.answer([response], cache_time=3000)
 
 
-async def respond_user_info(event, user: User):
-    user_id = user.id
-    user_name = html.escape(user.username)
-    status_emoji = "🟢" if user.is_online else "🔴"
+async def respond_users(event, users: list[User]):
+    responses = [
+        get_user_info_response(event, user)
+        for user in users
+    ]
 
-    play_mode = user.playmode if not user.playmode == 'osu' else 'standard'
-    rank_global = str(user.statistics.global_rank) if user.statistics.global_rank is not None else '-'
-    flag_emoji = get_flag_emoji(user.country_code)
-    rank_local = str(user.statistics.country_rank) if user.statistics.country_rank is not None else '-'
-
-    pp = round(user.statistics.pp)
-    accuracy = round(user.statistics.accuracy * 100, 3)
-    level = user.statistics.level.current
-
-    ss_count = user.statistics.grade_counts.ss
-    s_count = user.statistics.grade_counts.s
-    a_count = user.statistics.grade_counts.a
-
-    play_time = round(user.statistics.play_time / 3600, 1)
-    play_count = user.statistics.play_count
-
-    text = get_text(
-        'en', 'user-info',
-
-        user_id=user_id, user_name=user_name, status_emoji=status_emoji,
-        play_mode=play_mode, rank_global=rank_global, flag_emoji=flag_emoji,
-        rank_local=rank_local, pp=pp, accuracy=accuracy, level=level,
-        ss_count=ss_count, s_count=s_count, a_count=a_count,
-        play_time=play_time, play_count=play_count
-    )
-
-    response = event.builder.article(
-        title=user_name,
-        description=f'#{rank_global} • {pp}pp',
-        text=text,
-        parse_mode='html'
-    )
-    await event.answer([response], cache_time=120)
-    
+    await event.answer(responses, cache_time=120)
